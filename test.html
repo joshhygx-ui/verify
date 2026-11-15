@@ -1,0 +1,14 @@
+<!DOCTYPE html><meta charset="utf-8"><title>test</title>
+<button onclick="go()">Test</button>
+<pre id="o"></pre>
+<script>
+function go(){
+  fetch("https://api.web3forms.com/submit",{
+    method:"POST",
+    headers:{"Content-Type":"application/json","Accept":"application/json"},
+    body:JSON.stringify({access_key:"f6178b9e-3486-4351-a267-44d9536702ba",subject:"test",name:"test"})
+  }).then(r=>r.json()).then(j=>{
+    document.getElementById("o").textContent=JSON.stringify(j,null,2);
+  }).catch(e=>{document.getElementById("o").textContent="ERR "+e;});
+}
+</script>
